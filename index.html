@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Higashi Matrix v7.8 - Clinical Standard</title>
+    <title>Higashi Matrix v7.9 - Anesthemed Standard</title>
     <style>
         :root { --bg: #0d1117; --card: #161b22; --blue: #58a6ff; --green: #39d353; --yellow: #fbbf24; --border: #30363d; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); color: #c9d1d9; padding: 10px; margin: 0; display: flex; justify-content: center; }
         .container { background: var(--card); padding: 15px; border-radius: 16px; border: 1px solid var(--border); width: 100%; max-width: 420px; }
         h2 { color: var(--blue); text-align: center; font-size: 1.1em; margin-bottom: 15px; text-transform: uppercase; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        .config-aviso { font-size: 9px; color: var(--blue); text-align: center; margin-bottom: 15px; background: rgba(88, 166, 255, 0.1); padding: 5px; border-radius: 5px; }
         .inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         label { display: block; font-size: 10px; color: #8b949e; margin-bottom: 4px; font-weight: bold; }
         input { width: 100%; padding: 12px; background: #0d1117; border: 1px solid var(--border); color: #fff; border-radius: 8px; font-size: 18px; text-align: center; box-sizing: border-box; }
@@ -18,14 +19,15 @@
         td { padding: 10px 4px; border-bottom: 1px solid #161b22; text-align: center; }
         .fase-nome { text-align: left; font-weight: bold; padding-left: 8px; color: #fff; font-size: 11px; }
         .val { color: var(--green); font-weight: bold; font-size: 1.4em; display: block; }
-        .sub-val { display: block; font-size: 10px; color: #fbbf24; margin-top: 3px; font-weight: 500; }
+        .sub-val { display: block; font-size: 10px; color: var(--yellow); margin-top: 3px; font-weight: 500; }
         .ce-sub { display: block; font-size: 9px; color: #8b949e; margin-top: 2px; }
         .footer { text-align: center; margin-top: 20px; color: var(--green); font-weight: 900; font-size: 1.6em; letter-spacing: 2px; text-shadow: 0 0 10px rgba(57, 211, 83, 0.3); }
     </style>
 </head>
 <body>
 <div class="container">
-    <h2>Higashi Matrix v7.8</h2>
+    <h2>Higashi Matrix v7.9</h2>
+    <div class="config-aviso">PADRÃO: PROPOFOL 1% | REMIFENTANIL 40 µg/mL</div>
     
     <div class="inputs">
         <div>
@@ -44,7 +46,7 @@
                 <tr>
                     <th>Fase / Alvos Ce</th>
                     <th>Propofol 1%</th>
-                    <th>Remi 50mcg/ml</th>
+                    <th>Remi 40 µg/mL</th>
                 </tr>
             </thead>
             <tbody id="tabela-corpo"></tbody>
@@ -60,6 +62,7 @@ function calc() {
     const i = parseFloat(document.getElementById('idade').value);
     if (!p || !i) return;
 
+    // Alometria Eleveld (0.75) e Fator Idade
     let alo = Math.pow(p / 70, 0.75);
     let fI = i > 45 ? Math.exp(-0.005 * (i - 45)) : 1.0;
 
@@ -75,17 +78,17 @@ function calc() {
     corpo.innerHTML = "";
 
     fases.forEach(f => {
-        // Fluxo principal em ml/h
+        // CÁLCULO FLUXO (ml/h)
+        // Propofol: (Ce * Vc_eleveld * Keo * 60) / Concentração
         let mlhP = (f[1] * 22 * fI * 70 * alo * 60) / 10000;
+        
+        // Remifentanil: (Ce * Cl_eleveld * 60) / Concentração (40 mcg/ml)
+        // Ajustado para o modelo Eleveld onde Cl do Remi é ~0.045 L/kg/min
         let mlhR = (f[2] * 0.045 * fI * 70 * alo * 60) / 40;
 
-        // Propofol: mg/kg/h
-        // (ml/h * 10mg/ml) / peso = mg/kg/h
-        let mkhP = (mlhP * 10) / p;
-
-        // Remi: mcg/kg/min
-        // (ml/h * 50mcg/ml) / 60min / peso = mcg/kg/min
-        let mkmR = (mlhR * 50) / 60 / p;
+        // DOSES PARA CONFERÊNCIA
+        let mkhP = (mlhP * 10) / p; // mg/kg/h
+        let mkmR = (mlhR * 40) / 60 / p; // mcg/kg/min (usando 40mcg/ml)
 
         let row = `<tr>
             <td class="fase-nome">
