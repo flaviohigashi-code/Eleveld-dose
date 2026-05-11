@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Higashi Matrix v7.8 - Clinical Standard</title>
+    <style>
+        :root { --bg: #0d1117; --card: #161b22; --blue: #58a6ff; --green: #39d353; --yellow: #fbbf24; --border: #30363d; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: #c9d1d9; padding: 10px; margin: 0; display: flex; justify-content: center; }
+        .container { background: var(--card); padding: 15px; border-radius: 16px; border: 1px solid var(--border); width: 100%; max-width: 420px; }
+        h2 { color: var(--blue); text-align: center; font-size: 1.1em; margin-bottom: 15px; text-transform: uppercase; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        .inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        label { display: block; font-size: 10px; color: #8b949e; margin-bottom: 4px; font-weight: bold; }
+        input { width: 100%; padding: 12px; background: #0d1117; border: 1px solid var(--border); color: #fff; border-radius: 8px; font-size: 18px; text-align: center; box-sizing: border-box; }
+        .result-panel { background: #000; border-radius: 12px; border: 1px solid var(--green); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; font-size: 10px; }
+        th { background: #21262d; color: var(--blue); padding: 8px; border-bottom: 1px solid var(--border); }
+        td { padding: 10px 4px; border-bottom: 1px solid #161b22; text-align: center; }
+        .fase-nome { text-align: left; font-weight: bold; padding-left: 8px; color: #fff; font-size: 11px; }
+        .val { color: var(--green); font-weight: bold; font-size: 1.4em; display: block; }
+        .sub-val { display: block; font-size: 10px; color: #fbbf24; margin-top: 3px; font-weight: 500; }
+        .ce-sub { display: block; font-size: 9px; color: #8b949e; margin-top: 2px; }
+        .footer { text-align: center; margin-top: 20px; color: var(--green); font-weight: 900; font-size: 1.6em; letter-spacing: 2px; text-shadow: 0 0 10px rgba(57, 211, 83, 0.3); }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Higashi Matrix v7.8</h2>
+    
+    <div class="inputs">
+        <div>
+            <label>Peso Real (kg)</label>
+            <input type="number" id="peso" value="70" oninput="calc()">
+        </div>
+        <div>
+            <label>Idade (anos)</label>
+            <input type="number" id="idade" value="40" oninput="calc()">
+        </div>
+    </div>
+
+    <div class="result-panel">
+        <table>
+            <thead>
+                <tr>
+                    <th>Fase / Alvos Ce</th>
+                    <th>Propofol 1%</th>
+                    <th>Remi 50mcg/ml</th>
+                </tr>
+            </thead>
+            <tbody id="tabela-corpo"></tbody>
+        </table>
+    </div>
+    
+    <div class="footer">EXCELENTE!</div>
+</div>
+
+<script>
+function calc() {
+    const p = parseFloat(document.getElementById('peso').value);
+    const i = parseFloat(document.getElementById('idade').value);
+    if (!p || !i) return;
+
+    let alo = Math.pow(p / 70, 0.75);
+    let fI = i > 45 ? Math.exp(-0.005 * (i - 45)) : 1.0;
+
+    const fases = [
+        ["Preparação", 2.2, 1.5],
+        ["Incisão", 3.0, 4.0],
+        ["Manutenção", 2.2, 3.0],
+        ["Fechamento", 1.6, 1.5],
+        ["Extubação", 1.0, 0.5]
+    ];
+
+    const corpo = document.getElementById('tabela-corpo');
+    corpo.innerHTML = "";
+
+    fases.forEach(f => {
+        // Fluxo principal em ml/h
+        let mlhP = (f[1] * 22 * fI * 70 * alo * 60) / 10000;
+        let mlhR = (f[2] * 0.045 * fI * 70 * alo * 60) / 40;
+
+        // Propofol: mg/kg/h
+        // (ml/h * 10mg/ml) / peso = mg/kg/h
+        let mkhP = (mlhP * 10) / p;
+
+        // Remi: mcg/kg/min
+        // (ml/h * 50mcg/ml) / 60min / peso = mcg/kg/min
+        let mkmR = (mlhR * 50) / 60 / p;
+
+        let row = `<tr>
+            <td class="fase-nome">
+                ${f[0]}
+                <span class="ce-sub">Ce: ${f[1]} / ${f[2]}</span>
+            </td>
+            <td>
+                <span class="val">${mlhP.toFixed(1)} <small style="font-size:9px">ml/h</small></span>
+                <span class="sub-val">${mkhP.toFixed(1)} mg/kg/h</span>
+            </td>
+            <td>
+                <span class="val">${mlhR.toFixed(1)} <small style="font-size:9px">ml/h</small></span>
+                <span class="sub-val">${mkmR.toFixed(2)} mcg/kg/min</span>
+            </td>
+        </tr>`;
+        corpo.innerHTML += row;
+    });
+}
+calc();
+</script>
+</body>
+</html>
